@@ -1,5 +1,5 @@
 {
-  "name": "LevelUpLife",
+  "name": "leveluplife",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.1",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "expo": "^54.0.1",
     "expo-constants": "~18.0.8",
     "expo-linking": "~8.0.7",
@@ -26,7 +27,8 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-web": "^0.21.0",
-    "tailwindcss": "^3.4.0"
+    "tailwindcss": "^3.4.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/react": "~19.1.10",
