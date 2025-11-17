@@ -1,173 +1,264 @@
-import React, { useState } from 'react';
+// components/AddHabitModal.tsx
+import { useState } from 'react';
 import {
-  Modal,
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Pressable,
 } from 'react-native';
 import { useHabitsStore } from '@/stores/habitsStore';
+import { useUser } from '@clerk/clerk-expo';
+import { Ionicons } from '@expo/vector-icons';
 
 interface AddHabitModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
+type Frequency = 'daily' | 'weekly';
+
 const AddHabitModal = ({ visible, onClose }: AddHabitModalProps) => {
+  const { user } = useUser();
+  const { addHabit, isOnline } = useHabitsStore();
+  
   const [title, setTitle] = useState('');
-  const [frequency, setFrequency] = useState<'daily' | 'weekly'>('daily');
+  const [description, setDescription] = useState('');
+  const [frequency, setFrequency] = useState<Frequency>('daily');
 
-  const { addHabit } = useHabitsStore();
-
-  const handleSave = () => {
+  const handleAddHabit = () => {
     if (!title.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un nom pour l\'habitude.');
       return;
     }
 
-    addHabit({ title, frequency });
+    if (user?.id) {
+      addHabit(
+        {
+          title: title.trim(),
+          description: description.trim() || undefined,
+          frequency,
+        },
+        user.id
+      );
 
-    setTitle('');
-    onClose();
+      // Réinitialiser le formulaire
+      setTitle('');
+      setDescription('');
+      setFrequency('daily');
+      onClose();
+    }
   };
+
+  const frequencyOptions = [
+    { 
+      value: 'daily', 
+      label: 'Quotidien', 
+      icon: '📅', 
+      description: 'Tous les jours',
+      color: 'blue' 
+    },
+    { 
+      value: 'weekly', 
+      label: 'Hebdomadaire', 
+      icon: '📆', 
+      description: 'Toutes les semaines',
+      color: 'purple' 
+    },
+  ];
 
   return (
     <Modal
       visible={visible}
+      transparent
       animationType="slide"
-      transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <Text style={styles.title}>Ajouter une habitude</Text>
+      <Pressable 
+        className="flex-1 bg-black/50 justify-end"
+        onPress={onClose}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <View className="bg-white rounded-t-3xl p-6 min-h-[550px]">
+              {/* Header */}
+              <View className="flex-row items-center justify-between mb-6">
+                <View>
+                  <Text className="text-2xl font-bold text-gray-800">
+                    Nouvelle habitude 🎯
+                  </Text>
+                  {!isOnline && (
+                    <View className="flex-row items-center mt-1">
+                      <View className="w-2 h-2 rounded-full bg-amber-500 mr-2" />
+                      <Text className="text-xs text-amber-600">
+                        Sera synchronisée plus tard
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                
+                <TouchableOpacity
+                  onPress={onClose}
+                  className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center"
+                >
+                  <Ionicons name="close" size={20} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Nom de l'habitude"
-            value={title}
-            onChangeText={setTitle}
-          />
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Titre */}
+                <View className="mb-4">
+                  <Text className="text-sm font-semibold text-gray-700 mb-2">
+                    Nom de l'habitude *
+                  </Text>
+                  <TextInput
+                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-800"
+                    placeholder="Ex: Faire du sport, Lire 30 min..."
+                    placeholderTextColor="#9CA3AF"
+                    value={title}
+                    onChangeText={setTitle}
+                    autoFocus
+                  />
+                </View>
 
-          <View style={styles.frequencyContainer}>
-            <TouchableOpacity
-              style={[styles.freqButton, frequency === 'daily' && styles.activeFreqButton]}
-              onPress={() => setFrequency('daily')}
-            >
-              <Text style={[styles.freqText, frequency === 'daily' && styles.activeFreqText]}>Quotidien</Text>
-            </TouchableOpacity>
+                {/* Description */}
+                <View className="mb-4">
+                  <Text className="text-sm font-semibold text-gray-700 mb-2">
+                    Description (optionnelle)
+                  </Text>
+                  <TextInput
+                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-800"
+                    placeholder="Pourquoi cette habitude est importante pour vous..."
+                    placeholderTextColor="#9CA3AF"
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
 
-            <TouchableOpacity
-              style={[styles.freqButton, frequency === 'weekly' && styles.activeFreqButton]}
-              onPress={() => setFrequency('weekly')}
-            >
-              <Text style={[styles.freqText, frequency === 'weekly' && styles.activeFreqText]}>Hebdomadaire</Text>
-            </TouchableOpacity>
-          </View>
+                {/* Fréquence */}
+                <View className="mb-6">
+                  <Text className="text-sm font-semibold text-gray-700 mb-3">
+                    Fréquence
+                  </Text>
+                  <View className="space-y-3">
+                    {frequencyOptions.map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        className={`p-4 rounded-xl border-2 flex-row items-center ${
+                          frequency === option.value
+                            ? option.color === 'blue'
+                              ? 'bg-blue-50 border-blue-400'
+                              : 'bg-purple-50 border-purple-400'
+                            : 'bg-white border-gray-200'
+                        }`}
+                        onPress={() => setFrequency(option.value as Frequency)}
+                      >
+                        {/* Icône */}
+                        <View className={`w-12 h-12 rounded-full items-center justify-center mr-3 ${
+                          frequency === option.value
+                            ? option.color === 'blue'
+                              ? 'bg-blue-100'
+                              : 'bg-purple-100'
+                            : 'bg-gray-100'
+                        }`}>
+                          <Text className="text-2xl">{option.icon}</Text>
+                        </View>
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelText}>Annuler</Text>
-            </TouchableOpacity>
+                        {/* Texte */}
+                        <View className="flex-1">
+                          <Text className={`text-base font-semibold ${
+                            frequency === option.value
+                              ? option.color === 'blue'
+                                ? 'text-blue-700'
+                                : 'text-purple-700'
+                              : 'text-gray-700'
+                          }`}>
+                            {option.label}
+                          </Text>
+                          <Text className={`text-sm ${
+                            frequency === option.value
+                              ? option.color === 'blue'
+                                ? 'text-blue-600'
+                                : 'text-purple-600'
+                              : 'text-gray-500'
+                          }`}>
+                            {option.description}
+                          </Text>
+                        </View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveText}>Sauvegarder</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+                        {/* Checkmark */}
+                        {frequency === option.value && (
+                          <Ionicons 
+                            name="checkmark-circle" 
+                            size={24} 
+                            color={option.color === 'blue' ? '#3B82F6' : '#A855F7'} 
+                          />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Info box */}
+                <View className="bg-orange-50 p-4 rounded-xl mb-6 flex-row">
+                  <Text className="text-2xl mr-3">🔥</Text>
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold text-orange-900 mb-1">
+                      Construisez votre streak !
+                    </Text>
+                    <Text className="text-xs text-orange-700">
+                      Complétez votre habitude chaque jour pour augmenter votre streak et rester motivé.
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Boutons d'action */}
+                <View className="flex-row gap-3">
+                  <TouchableOpacity
+                    className="flex-1 bg-gray-100 p-4 rounded-xl items-center active:bg-gray-200"
+                    onPress={onClose}
+                  >
+                    <Text className="text-gray-700 font-semibold text-base">
+                      Annuler
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    className={`flex-1 p-4 rounded-xl items-center ${
+                      title.trim()
+                        ? 'bg-blue-500 active:bg-blue-600'
+                        : 'bg-gray-300'
+                    }`}
+                    onPress={handleAddHabit}
+                    disabled={!title.trim()}
+                  >
+                    <View className="flex-row items-center">
+                      <Ionicons 
+                        name="add-circle-outline" 
+                        size={20} 
+                        color="white" 
+                      />
+                      <Text className="text-white font-semibold text-base ml-2">
+                        Créer
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Pressable>
     </Modal>
   );
 };
 
 export default AddHabitModal;
-
-const styles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalView: {
-    width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  input: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
-  },
-  frequencyContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
-  freqButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-  },
-  activeFreqButton: {
-    backgroundColor: '#2196F3',
-    borderColor: '#2196F3',
-  },
-  freqText: {
-    color: '#333',
-  },
-  activeFreqText: {
-    color: 'white',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  cancelButton: {
-    flex: 1,
-    padding: 10,
-    alignItems: 'center',
-    backgroundColor: '#f44336',
-    borderRadius: 8,
-    marginRight: 5,
-  },
-  saveButton: {
-    flex: 1,
-    padding: 10,
-    alignItems: 'center',
-    backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    marginLeft: 5,
-  },
-  cancelText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  saveText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-});
