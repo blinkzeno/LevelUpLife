@@ -1,31 +1,77 @@
 // screens/TasksScreen.tsx
-import React from 'react';
-import { View, Text, FlatList, Button } from 'react-native';
+import  {  useEffect, useState } from 'react';
+import { View, Text, FlatList, Button, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTasksStore } from '@/stores/tasksStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUser } from '@clerk/clerk-expo';
+import AddTaskModal from '@/components/AddTaskModal';
 
 const TasksScreen = () => {
+  const { user } = useUser();
+    const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+    
   
-  const { tasks, addTask, moveTask, deleteTask } = useTasksStore();
+  const { tasks, moveTask, deleteTask, loadTasksFromRemote } = useTasksStore();
+  
+  useEffect(
+    () => {
+      
+      const loadTasks = async () => {
+        if (user) {
+          setLoading(true); // Activer le loading
+           loadTasksFromRemote(user.id); // Attendre la synchronisation
+          setLoading(false); // Désactiver le loading
+      } else {
+        setLoading(false); // Si pas d'utilisateur, aussi désactiver
+      }
+    };
+
+    loadTasks();
+    },
+    [tasks]
+  );
+
+
+ if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#2196F3" />
+        <Text style={{ marginTop: 10 }}>Chargement des tâches...</Text>
+      </View>
+    );
+  }
+
+
 
   return (
-    <SafeAreaView className='flex-1 justify-center items-center bg-gray-300'>
+    <SafeAreaView >
       <Text className='text-2xl'>Total de tâches : {tasks.length}</Text>
-      <Button
-        title="Ajouter une tâche"
-        onPress={() => addTask({ title: 'Nouvelle tâche', status: 'todo' })}
-      />
+      
+      <TouchableOpacity className='bg-blue-500 p-2 rounded-md' onPress={() => setModalVisible(true)}>
+        <Text className='text-white'>+ Ajouter une tache</Text>
+            </TouchableOpacity>
+     
       <FlatList
         data={tasks}
-        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+       
+        keyExtractor={(item) => item.$id}
         renderItem={({ item }) => (
-          <View style={{ padding: 10, borderBottomWidth: 1 }}>
+          <View  style={{ padding: 10, borderBottomWidth: 1 }}>
+            <Text>{item.$id}</Text>
             <Text>{item.title}</Text>
+            <Text>{item.description || '-'}</Text>
             <Text>{item.status}</Text>
-            <Button title="Fait" onPress={() => moveTask(item.id, 'done')} />
-            <Button title="Supprimer" onPress={() => deleteTask(item.id)} />
+            <Button title="Fait" onPress={() => moveTask(item.$id, 'done', user.id)} />
+            <Button title="Supprimer" onPress={() => deleteTask(item.$id, user.id)} />
           </View>
         )}
+      />
+
+       <AddTaskModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
       />
     </SafeAreaView>
   );

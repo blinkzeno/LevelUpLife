@@ -2,7 +2,7 @@ import React, { useCallback, useEffect } from 'react'
 import * as WebBrowser from 'expo-web-browser'
 import * as AuthSession from 'expo-auth-session'
 import { useSSO } from '@clerk/clerk-expo'
-import { View, Button, Platform, Touchable, TouchableOpacity, Text } from 'react-native'
+import { View, Platform, TouchableOpacity, Text } from 'react-native'
 import { router } from 'expo-router'
 import AntDesign from '@expo/vector-icons/AntDesign';
 

@@ -1,18 +1,28 @@
 {
-  "scheme": "acme",
-  "userInterfaceStyle": "automatic",
-  "orientation": "default",
-  "web": {
-    "output": "static"
-  },
-  "plugins": [
-    [
-      "expo-router",
-      {
-        "origin": "https://n"
-      }
-    ]
-  ],
-  "name": "leveluplife",
-  "slug": "leveluplife"
+  "expo": {
+    "name": "leveluplife",
+    "slug": "leveluplife",
+    "version": "1.0.0",
+    "platforms": ["ios", "android", "web"],
+    "scheme": "acme",
+    "userInterfaceStyle": "automatic",
+    "orientation": "portrait",
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://n"
+        }
+      ]
+    ],
+    "ios": {
+      "bundleIdentifier": "com.delices.leveluplife"
+    },
+    "android": {
+      "package": "com.delices.leveluplife"
+    }
+  }
 }
