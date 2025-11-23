@@ -13,6 +13,11 @@ export interface Task {
   description?: string;
   status: TaskStatus;
   clerkUserId?: string;
+  // Scheduling fields
+  startTime?: string;
+  endTime?: string;
+  date?: string;
+  type?: "work" | "health" | "learning" | "social" | "other";
   // Nouveaux champs pour la gestion offline
   localId?: string; // ID local temporaire avant sync
   pendingSync?: boolean; // Indique si la tâche attend d'être synchronisée
@@ -289,6 +294,11 @@ export const useTasksStore = create<TasksState>()(
             clerkUserId: doc.clerkUserId,
             syncStatus: "synced",
             lastModified: new Date(doc.$updatedAt).getTime(),
+            // Map new fields
+            startTime: doc.startTime,
+            endTime: doc.endTime,
+            date: doc.date,
+            type: doc.type,
           }));
 
           // Fusionner avec les tâches locales non synchronisées
@@ -329,6 +339,11 @@ async function createTaskRemote(
       title: task.title,
       description: task.description,
       status: task.status,
+      // Note: Ensure these attributes exist in your Appwrite collection
+      startTime: task.startTime,
+      endTime: task.endTime,
+      date: task.date,
+      type: task.type,
     },
   });
   return response.$id;
@@ -421,5 +436,3 @@ async function deleteTaskRemoteWithRetry(id: string, set: any, get: any) {
     });
   }
 }
-
-// ============ HOOK POUR SURVEILLER LA CONNEXION ============
